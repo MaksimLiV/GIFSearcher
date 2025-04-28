@@ -14,7 +14,7 @@ Package.pins
 Package.resolved
 
 # API Keys
-/GIFSearcher/GIFSearcher/Config/APIKeySecret.swift
+**/APIKeySecret.swift
 
 # CocoaPods
 Pods/
