@@ -19,11 +19,11 @@ Package.resolved
 # CocoaPods
 Pods/
 
-# Объекты и артефакты сборки
+# Build objects and artifacts
 build/
 DerivedData/
 
-# Прочее
+# Other
 *.moved-aside
 *.pbxuser
 !default.pbxuser
