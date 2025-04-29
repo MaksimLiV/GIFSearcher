@@ -6,21 +6,24 @@
 //
 
 import UIKit
+import ObjectiveC
 
 extension UIImageView {
     private static var taskKey = "GIFDownloadTask"
     
     private var currentTask: URLSessionDataTask? {
         get {
-            return objc_getAssociatedObject(self, &UIImageView.taskKey) as? URLSessionDataTask
+            return objc_getAssociatedObject(self, &UIImageView.taskKeyPointer) as? URLSessionDataTask
         }
         set {
-            objc_setAssociatedObject(self, &UIImageView.taskKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &UIImageView.taskKeyPointer, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
     
+    
+    private static var taskKeyPointer = UnsafeMutablePointer<Int8>.allocate(capacity: 1)
+    
     func setGifFromURL(_ url: URL, placeholderImage: UIImage? = nil) {
-
         self.image = placeholderImage
         cancelCurrentTask()
         
@@ -31,10 +34,9 @@ extension UIImageView {
                   let source = CGImageSourceCreateWithData(data as CFData, nil) else {
                 return
             }
-
+            
             let count = CGImageSourceGetCount(source)
             
-            // Если только один кадр, это обычная картинка
             if count == 1, let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) {
                 DispatchQueue.main.async {
                     self.image = UIImage(cgImage: cgImage)
