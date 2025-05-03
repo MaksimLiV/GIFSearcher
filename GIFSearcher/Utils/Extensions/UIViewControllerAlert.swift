@@ -23,6 +23,6 @@ extension UIViewController {
     }
     
     func showErrorAlert(_ error: Error, completion: (() -> Void)? = nil) {
-        showAlert(title: "Ошибка", message: error.localizedDescription, completion: completion)
+        showAlert(title: "Error", message: error.localizedDescription, completion: completion)
     }
 }
