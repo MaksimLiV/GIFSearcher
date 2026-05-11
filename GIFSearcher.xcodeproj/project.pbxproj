@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		37F470F12F981C03002B1B51 /* SwiftyGif in Frameworks */ = {isa = PBXBuildFile; productRef = 37F470F02F981C03002B1B51 /* SwiftyGif */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		37502C852DC0168000179AFC /* GIFSearcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GIFSearcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37F470F12F981C03002B1B51 /* SwiftyGif in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = GIFSearcher;
 			packageProductDependencies = (
+				37F470F02F981C03002B1B51 /* SwiftyGif */,
 			);
 			productName = GIFSearcher;
 			productReference = 37502C852DC0168000179AFC /* GIFSearcher.app */;
@@ -91,7 +97,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1630;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					37502C842DC0168000179AFC = {
 						CreatedOnToolsVersion = 16.3;
@@ -108,6 +114,7 @@
 			mainGroup = 37502C7C2DC0168000179AFC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				37F470EF2F981C03002B1B51 /* XCRemoteSwiftPackageReference "SwiftyGif" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 37502C862DC0168000179AFC /* Products */;
@@ -255,6 +262,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -312,6 +320,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -339,6 +348,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		37F470EF2F981C03002B1B51 /* XCRemoteSwiftPackageReference "SwiftyGif" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alexiscreuzot/SwiftyGif";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.4.5;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		37F470F02F981C03002B1B51 /* SwiftyGif */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 37F470EF2F981C03002B1B51 /* XCRemoteSwiftPackageReference "SwiftyGif" */;
+			productName = SwiftyGif;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 37502C7D2DC0168000179AFC /* Project object */;
 }

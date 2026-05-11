@@ -13,6 +13,7 @@ protocol NetworkServiceProtocol {
 
 class NetworkService: NetworkServiceProtocol {
     private let session: URLSession
+    private var currentTask: URLSessionDataTask?
     
     init(session: URLSession = .shared) {
         self.session = session
@@ -30,8 +31,12 @@ class NetworkService: NetworkServiceProtocol {
             return
         }
         
+        currentTask?.cancel()
+        
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
+                let nsError = error as NSError
+                if nsError.code == NSURLErrorCancelled { return }
                 completion(.failure(.unknown(error)))
                 return
             }
@@ -59,6 +64,7 @@ class NetworkService: NetworkServiceProtocol {
             }
         }
         
+        currentTask = task
         task.resume()
     }
 }

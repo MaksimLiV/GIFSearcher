@@ -6,12 +6,15 @@
 //
 
 import UIKit
+import SwiftyGif
 
 class GIFDetailViewController: UIViewController {
+    
     // MARK: - Properties
+    
     private let viewModel: GIFDetailViewModel
     
-    private let gifImageView: UIImageView = {
+    private lazy var gifImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
@@ -19,7 +22,7 @@ class GIFDetailViewController: UIViewController {
         return imageView
     }()
     
-    private let titleLabel: UILabel = {
+    private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
         label.textAlignment = .center
@@ -28,14 +31,14 @@ class GIFDetailViewController: UIViewController {
         return label
     }()
     
-    private let activityIndicator: UIActivityIndicatorView = {
+    private lazy var activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.hidesWhenStopped = true
         indicator.translatesAutoresizingMaskIntoConstraints = false
         return indicator
     }()
     
-    private let shareButton: UIButton = {
+    private lazy var shareButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Share", for: .normal)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
@@ -43,10 +46,19 @@ class GIFDetailViewController: UIViewController {
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
         return button
     }()
     
+    // MARK: - Private Properties
+    
+    private var currentGifTask: URLSessionDataTask?
+    private var gifDelegate: GifCompletionDelegate?
+    
+    private let noInternetView = NoInternetView()
+    
     // MARK: - Initialization
+    
     init(gif: GIF) {
         self.viewModel = GIFDetailViewModel(gif: gif)
         super.init(nibName: nil, bundle: nil)
@@ -57,16 +69,27 @@ class GIFDetailViewController: UIViewController {
     }
     
     // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         configureWithGif()
-        
         viewModel.delegate = self
         viewModel.loadFullDetails()
+        subscribeToNetworkChanges()
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        currentGifTask?.cancel()
+        currentGifTask = nil
+        gifDelegate = nil
+        gifImageView.clear()
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - UI Setup
+    
     private func setupUI() {
         title = "GIF Details"
         view.backgroundColor = .systemBackground
@@ -95,21 +118,49 @@ class GIFDetailViewController: UIViewController {
             activityIndicator.centerYAnchor.constraint(equalTo: gifImageView.centerYAnchor)
         ])
         
-        shareButton.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
     }
+    
+    // MARK: - Configuration
     
     private func configureWithGif() {
         let gif = viewModel.gif
         titleLabel.text = gif.title
         
-        if let url = URL(string: gif.images.original.url) {
-            activityIndicator.startAnimating()
-            gifImageView.setGifFromURL(url)
-            activityIndicator.stopAnimating()
+        guard let url = URL(string: gif.images.original.url) else { return }
+        
+        currentGifTask?.cancel()
+        gifImageView.clear()
+        
+        gifDelegate = GifCompletionDelegate { [weak self] in
+            self?.activityIndicator.stopAnimating()
         }
+        
+        gifImageView.delegate = gifDelegate
+        
+        currentGifTask = gifImageView.setGifFromURL(
+            url,
+            levelOfIntegrity: .default,
+            loopCount: -1,
+            showLoader: false
+        )
+    }
+    
+    // MARK: - Network
+    
+    private func subscribeToNetworkChanges() {
+        if !NetworkMonitor.shared.isConnected {
+            noInternetView.show(in: view)
+        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleConnectivityChange(_:)),
+            name: NetworkMonitor.connectivityDidChange,
+            object: nil
+        )
     }
     
     // MARK: - Actions
+    
     @objc private func shareButtonTapped() {
         guard let gifURL = URL(string: viewModel.gif.images.original.url) else { return }
         
@@ -120,9 +171,19 @@ class GIFDetailViewController: UIViewController {
         
         present(activityViewController, animated: true)
     }
+    
+    @objc private func handleConnectivityChange(_ notification: Notification) {
+        guard let isConnected = notification.userInfo?["isConnected"] as? Bool else { return }
+        if isConnected {
+            noInternetView.hide()
+        } else {
+            noInternetView.show(in: view)
+        }
+    }
 }
 
 // MARK: - GIFDetailViewModelDelegate
+
 extension GIFDetailViewController: GIFDetailViewModelDelegate {
     func didStartLoading() {
         DispatchQueue.main.async { [weak self] in
@@ -132,14 +193,18 @@ extension GIFDetailViewController: GIFDetailViewModelDelegate {
     
     func didFinishLoading() {
         DispatchQueue.main.async { [weak self] in
-            self?.activityIndicator.stopAnimating()
             self?.configureWithGif()
         }
     }
     
     func didFailWithError(_ error: Error) {
         DispatchQueue.main.async { [weak self] in
+            if let networkError = error as? NetworkError,
+               case .noInternetConnection = networkError {
+                return
+            }
             self?.showErrorAlert(error)
         }
     }
+    
 }

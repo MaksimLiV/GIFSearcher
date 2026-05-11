@@ -7,63 +7,73 @@
 
 import Foundation
 
+// MARK: - GIFSearchViewModelDelegate
+
 protocol GIFSearchViewModelDelegate: AnyObject {
     func didUpdateGifs()
     func didFailWithError(_ error: Error)
     func didStartLoading()
     func didFinishLoading()
+    func didAppendGifs(at indexPaths: [IndexPath])
 }
 
+// MARK: - GIFSearchViewModel
+
 class GIFSearchViewModel {
-    private let giphyService: GiphyServiceProtocol
-    weak var delegate: GIFSearchViewModelDelegate?
     
+    // MARK: - Public Properties
+    
+    weak var delegate: GIFSearchViewModelDelegate?
     private(set) var gifs: [GIF] = []
     private(set) var isLoading = false
     private(set) var currentSearchQuery: String = ""
     private(set) var currentPage = 0
     private(set) var hasMorePages = true
     
+    // MARK: - Private Properties
+    
+    private let giphyService: GiphyServiceProtocol
     private let itemsPerPage = 20
     private var searchWorkItem: DispatchWorkItem?
+    
+    // MARK: - Initialization
     
     init(giphyService: GiphyServiceProtocol = GiphyService()) {
         self.giphyService = giphyService
     }
     
+    // MARK: - Public Methods
     
     func loadInitialGifs() {
         fetchTrendingGifs()
     }
     
-    
     func searchGifs(query: String) {
-        
+        print("🔍 searchGifs called with query: '\(query)', currentQuery: '\(currentSearchQuery)'")
         searchWorkItem?.cancel()
         
+        guard query != currentSearchQuery else {
+            return
+        }
+        currentSearchQuery = query
+        
         if query.isEmpty {
-            
-            resetSearch()
             fetchTrendingGifs()
             return
         }
         
-        
         let workItem = DispatchWorkItem { [weak self] in
-            self?.resetSearch()
-            self?.currentSearchQuery = query
             self?.performSearch()
         }
         
         searchWorkItem = workItem
-        
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: workItem)
     }
     
-    
     func loadMoreGifs() {
-        guard !isLoading, hasMorePages else { return }
+        guard !isLoading, hasMorePages else {
+            return
+        }
         
         if currentSearchQuery.isEmpty {
             fetchTrendingGifs(loadMore: true)
@@ -72,25 +82,28 @@ class GIFSearchViewModel {
         }
     }
     
-    
     func gif(at index: Int) -> GIF? {
         guard index < gifs.count else { return nil }
         return gifs[index]
     }
     
+    // MARK: - Private Methods
     
     private func resetSearch() {
         gifs = []
         currentPage = 0
         hasMorePages = true
-        delegate?.didUpdateGifs()
+        isLoading = false
     }
     
-    
     private func fetchTrendingGifs(loadMore: Bool = false) {
-        guard !isLoading else { return }
+        guard !isLoading else {
+            return
+        }
         
-        if loadMore {
+        if !loadMore {
+            resetSearch()
+        } else {
             currentPage += 1
         }
         
@@ -100,23 +113,25 @@ class GIFSearchViewModel {
         delegate?.didStartLoading()
         
         giphyService.getTrendingGifs(limit: itemsPerPage, offset: offset) { [weak self] result in
-            guard let self = self else { return }
+            print("getTrendingGifs completion: \(result)")
+            guard let self else { return }
             
             self.isLoading = false
             self.delegate?.didFinishLoading()
             
             switch result {
             case .success(let response):
-                
                 self.hasMorePages = offset + response.data.count < response.pagination.totalCount
-                
+                print("📊 hasMorePages: \(self.hasMorePages), offset: \(offset), count: \(response.data.count), total: \(response.pagination.totalCount)")
                 if loadMore {
+                    let startIndex = self.gifs.count
                     self.gifs.append(contentsOf: response.data)
+                    let indexPaths = (startIndex..<self.gifs.count).map { IndexPath(item: $0, section: 0) }
+                    self.delegate?.didAppendGifs(at: indexPaths)
                 } else {
                     self.gifs = response.data
+                    self.delegate?.didUpdateGifs()
                 }
-                
-                self.delegate?.didUpdateGifs()
                 
             case .failure(let error):
                 self.delegate?.didFailWithError(error)
@@ -124,11 +139,14 @@ class GIFSearchViewModel {
         }
     }
     
-    
     private func performSearch(loadMore: Bool = false) {
-        guard !isLoading else { return }
+        guard !isLoading else {
+            return
+        }
         
-        if loadMore {
+        if !loadMore {
+            resetSearch()
+        } else {
             currentPage += 1
         }
         
@@ -138,23 +156,23 @@ class GIFSearchViewModel {
         delegate?.didStartLoading()
         
         giphyService.searchGifs(query: currentSearchQuery, limit: itemsPerPage, offset: offset) { [weak self] result in
-            guard let self = self else { return }
+            guard let self else { return }
             
             self.isLoading = false
             self.delegate?.didFinishLoading()
             
             switch result {
             case .success(let response):
-                
                 self.hasMorePages = offset + response.data.count < response.pagination.totalCount
-                
                 if loadMore {
+                    let startIndex = self.gifs.count
                     self.gifs.append(contentsOf: response.data)
+                    let indexPaths = (startIndex..<self.gifs.count).map { IndexPath(item: $0, section: 0) }
+                    self.delegate?.didAppendGifs(at: indexPaths)
                 } else {
                     self.gifs = response.data
+                    self.delegate?.didUpdateGifs()
                 }
-                
-                self.delegate?.didUpdateGifs()
                 
             case .failure(let error):
                 self.delegate?.didFailWithError(error)
