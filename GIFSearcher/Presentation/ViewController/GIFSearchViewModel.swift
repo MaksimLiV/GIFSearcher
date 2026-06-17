@@ -49,7 +49,6 @@ class GIFSearchViewModel {
     }
     
     func searchGifs(query: String) {
-        print("🔍 searchGifs called with query: '\(query)', currentQuery: '\(currentSearchQuery)'")
         searchWorkItem?.cancel()
         
         guard query != currentSearchQuery else {
@@ -113,7 +112,6 @@ class GIFSearchViewModel {
         delegate?.didStartLoading()
         
         giphyService.getTrendingGifs(limit: itemsPerPage, offset: offset) { [weak self] result in
-            print("getTrendingGifs completion: \(result)")
             guard let self else { return }
             
             self.isLoading = false
@@ -122,7 +120,6 @@ class GIFSearchViewModel {
             switch result {
             case .success(let response):
                 self.hasMorePages = offset + response.data.count < response.pagination.totalCount
-                print("📊 hasMorePages: \(self.hasMorePages), offset: \(offset), count: \(response.data.count), total: \(response.pagination.totalCount)")
                 if loadMore {
                     let startIndex = self.gifs.count
                     self.gifs.append(contentsOf: response.data)
